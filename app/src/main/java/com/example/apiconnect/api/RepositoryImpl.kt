@@ -9,15 +9,15 @@ import kotlinx.coroutines.flow.flow
 import java.io.IOException
 
 class RepositoryImpl(
-    private val api: Api
+    private val api: Api //Переменная интерфейса Api
 ) : Repository {
 
+    //Переопределение метода из interface Repository. Здесь происходит реализация обработки данных
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     override suspend fun getCharacter(): Flow<Result<RickAndMorty>> {
         return flow {
             val rickAndMortyFromApi = try {
                 api.getCharacter()
-
             } catch (e: IOException) {
                 e.printStackTrace()
                 emit( Result.Error(message = "Error loading products"))

@@ -30,7 +30,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -40,12 +39,14 @@ import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size
 import com.example.apiconnect.api.RepositoryImpl
+import com.example.apiconnect.api.RetrofitInstance
 import com.example.apiconnect.model.Result
-import com.example.apiconnect.model.RickAndMorty
 import com.example.apiconnect.ui.theme.ApiConnectTheme
+import com.example.apiconnect.viewmodel.ViewModelMain
 import kotlinx.coroutines.flow.collectLatest
 
 class MainActivity : ComponentActivity() {
+    //Создание провайдера ViewModel
     private val viewModel by viewModels<ViewModelMain>(factoryProducer = {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -63,9 +64,21 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val productList = viewModel.rickAndMorty.collectAsState().value
+                    //Превязанная перменная для получения данных из API
+                    val characterList = viewModel.rickAndMorty.collectAsState().value
+                    /** Context — это объект, который предоставляет доступ к базовым функциям приложения в Android,
+                        таким как доступ к ресурсам, файловой системе, вызов активности и т. д.*/
                     val context = LocalContext.current
 
+
+                    /** LaunchedEffect — это composable-функция, которая используется для запуска сопрограммы
+                        внутри области composable. Когда LaunchedEffect входит в композицию,
+                        он запускает сопрограмму и отменяет её при выходе из композиции.
+                    *
+                    LaunchedEffect принимает несколько ключей в качестве параметров,
+                    и если какой-либо из ключей изменяется, он может отменить существующую сопрограмму
+                    и запустить её снова. Это полезно для выполнения побочных эффектов,
+                    таких как сетевые вызовы или обновление базы данных, без блокировки потока пользовательского интерфейса*/
                     LaunchedEffect(key1 = viewModel.showErrorToastChannel) {
                         viewModel.showErrorToastChannel.collectLatest { show ->
                             if (show) {
@@ -75,8 +88,8 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-
-                    if (productList.isEmpty()) {
+                    //Если лист пустой, то будет отображаться progress bar
+                    if (characterList.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
@@ -84,13 +97,14 @@ class MainActivity : ComponentActivity() {
                             CircularProgressIndicator()
                         }
                     } else {
+                        //Иначе выводим данные в лист
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             contentPadding = PaddingValues(16.dp)
                         ) {
-                            items(productList.size) { index ->
-                                Product(productList[index])
+                            items(characterList.size) { index ->
+                                Character(characterList[index])
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
@@ -101,8 +115,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+//Отрисовка одного персонажа
 @Composable
-fun Product(res: Result) {
+fun Character(res: Result) {
     val imageState = rememberAsyncImagePainter(
         model = ImageRequest.Builder(LocalContext.current).data(res.image)
             .size(Size.ORIGINAL).build()
