@@ -65,4 +65,24 @@ class ViewModelMain(private val repository: Repository): ViewModel() {
             }
         }
     }
+    fun sendCodeToEmail(email:String)
+    {
+        viewModelScope.launch {
+            repository.sendCodeEmail(email).collect{
+                when(it) {
+                    /** Instanceof (is) - это оператор на языке java, здесь, в Kotlin, мы использовали is и !
+                    это ключевые слова для выполнения операций, таких как instanceof,
+                    то есть тип свойства доступен или нет, это функция, подобная способу проверки типа,
+                    для проверки типа конкретного экземпляра или других различных переменных во время выполнения,
+                    для разделения рабочего процесса.*/
+                    is com.example.apiconnect.api.Result.Error -> {
+                        _showErrorToastChannel.send(true)
+                    }
+                    is com.example.apiconnect.api.Result.Success -> {
+                        _showErrorToastChannel.send(false)
+                    }
+                }
+            }
+        }
+    }
 }

@@ -37,4 +37,12 @@ object RetrofitInstance {
     // В итоге мы получили объект Retrofit,
     // содержащий базовый URL и способность преобразовывать JSON-данные с помощью указанного конвертера Gson
     // В методе create() указываем наш класс интерфейса с запросами к сайту
+
+
+    val apiSmartLab: Api = Retrofit.Builder()
+        .addConverterFactory(GsonConverterFactory.create())
+        .baseUrl(Api.BASE_URL_SMARTLAB)
+        .client(client)
+        .build()
+        .create(Api::class.java)
 }

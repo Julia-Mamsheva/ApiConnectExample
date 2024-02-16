@@ -17,13 +17,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,6 +59,15 @@ class MainActivity : ComponentActivity() {
             }
         }
     })
+    private val viewModelSmart by viewModels<ViewModelMain>(factoryProducer = {
+        object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return ViewModelMain(RepositoryImpl(RetrofitInstance.apiSmartLab))
+                        as T
+            }
+        }
+    })
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -64,52 +77,59 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    //Превязанная перменная для получения данных из API
-                    val characterList = viewModel.rickAndMorty.collectAsState().value
-                    /** Context — это объект, который предоставляет доступ к базовым функциям приложения в Android,
-                        таким как доступ к ресурсам, файловой системе, вызов активности и т. д.*/
-                    val context = LocalContext.current
-
-
-                    /** LaunchedEffect — это composable-функция, которая используется для запуска сопрограммы
-                        внутри области composable. Когда LaunchedEffect входит в композицию,
-                        он запускает сопрограмму и отменяет её при выходе из композиции.
-                    *
-                    LaunchedEffect принимает несколько ключей в качестве параметров,
-                    и если какой-либо из ключей изменяется, он может отменить существующую сопрограмму
-                    и запустить её снова. Это полезно для выполнения побочных эффектов,
-                    таких как сетевые вызовы или обновление базы данных, без блокировки потока пользовательского интерфейса*/
-                    LaunchedEffect(key1 = viewModel.showErrorToastChannel) {
-                        viewModel.showErrorToastChannel.collectLatest { show ->
-                            if (show) {
-                                Toast.makeText(
-                                    context, "Error", Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        }
-                    }
-                    //Если лист пустой, то будет отображаться progress bar
-                    if (characterList.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    } else {
-                        //Иначе выводим данные в лист
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            contentPadding = PaddingValues(16.dp)
-                        ) {
-                            items(characterList.size) { index ->
-                                Character(characterList[index])
-                                Spacer(modifier = Modifier.height(16.dp))
-                            }
-                        }
-                    }
+                    /*sendCodeToEmail(viewModelSmart)*/ //- отправка кода на почту
+                    getCharacter(viewModel) //- получение данных методом get
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun getCharacter(viewModel: ViewModelMain) {
+    //Превязанная перменная для получения данных из API
+    val characterList = viewModel.rickAndMorty.collectAsState().value
+
+    /** Context — это объект, который предоставляет доступ к базовым функциям приложения в Android,
+     таким как доступ к ресурсам, файловой системе, вызов активности и т. д.*/
+    val context = LocalContext.current
+
+
+    /** LaunchedEffect — это composable-функция, которая используется для запуска сопрограммы
+    внутри области composable.Когда LaunchedEffect входит в композицию,
+    он запускает сопрограмму и отменяет её при выходе из композиции .
+    *
+    LaunchedEffect принимает несколько ключей в качестве параметров,
+    и если какой - либо из ключей изменяется, он может отменить существующую сопрограмму
+    и запустить её снова . Это полезно для выполнения побочных эффектов,
+    таких как сетевые вызовы или обновление базы данных, без блокировки потока пользовательского интерфейса*/
+    LaunchedEffect(key1 = viewModel.showErrorToastChannel) {
+        viewModel.showErrorToastChannel.collectLatest { show ->
+            if (show) {
+                Toast.makeText(
+                    context, "Error", Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+    //Если лист пустой, то будет отображаться progress bar
+    if (characterList.isEmpty()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    } else {
+        //Иначе выводим данные в лист
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(16.dp)
+        ) {
+            items(characterList.size) { index ->
+                Character(characterList[index])
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
@@ -170,5 +190,20 @@ fun Character(res: Result) {
             fontSize = 13.sp,
         )
 
+    }
+}
+
+@Composable
+fun sendCodeToEmail(viewModel: ViewModelMain) {
+    val email = remember { mutableStateOf("") }
+    Column(
+        Modifier.padding(top = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    )
+    {
+        TextField(value = email.value, onValueChange = { newtext -> email.value = newtext })
+        Button(onClick = { viewModel.sendCodeToEmail(email.value) }) {
+            Text(text = "Send code to email")
+        }
     }
 }
